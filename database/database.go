@@ -30,7 +30,7 @@ func Connect() error {
 	}
 
 	CreateUsersTable()
-	CreatePostsTable()
+	CreateTokensTable()
 	fmt.Println("Connection Opened to Database")
 	return nil
 }
