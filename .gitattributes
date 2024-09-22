@@ -1,0 +1,9 @@
+# Ignore node_modules folder (Next.js dependencies)
+client/node_modules/* linguist-vendored
+
+
+# Ignore build files (if any)
+build/* linguist-generated
+
+# Ignore migrations or SQL dump files (if any)
+contracts/openzeppelin/* linguist-generated
