@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -8,6 +9,7 @@ import (
 
 	"example.com/go-fiber/config"
 	"example.com/go-fiber/database"
+	"example.com/go-fiber/dto"
 	"example.com/go-fiber/model"
 	"golang.org/x/crypto/bcrypt"
 
@@ -56,8 +58,8 @@ func LoginUser(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "cannot parse JSON"})
 	}
 
-	row := database.DB.QueryRow("SELECT id, username, password_hash, ethereum_address FROM users WHERE username=$1", input.Username)
-	row.Scan(&storedUser.ID, &storedUser.Username, &storedUser.Password, &storedUser.Wallet)
+	row := database.DB.QueryRow("SELECT id, email, username, password_hash, ethereum_address, role FROM users WHERE email=$1", input.Email)
+	row.Scan(&storedUser.ID, &storedUser.Email, &storedUser.Username, &storedUser.Password, &storedUser.Wallet, &storedUser.Role)
 
 	err := bcrypt.CompareHashAndPassword([]byte(storedUser.Password), []byte(input.Password))
 	if err != nil {
@@ -69,15 +71,17 @@ func LoginUser(c *fiber.Ctx) error {
 
 	// Create the Claims
 	claims := jwt.MapClaims{
-		"name": storedUser.Username,
-		"exp":  time.Now().Add(time.Hour * 72).Unix(),
+		"user_id": storedUser.ID,
+		"name":    storedUser.Username,
+		"role":    storedUser.Role,
+		"exp":     time.Now().Add(time.Hour * 72).Unix(),
 	}
 
 	// Create token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	// Generate encoded token and send it as response.
-	t, err := token.SignedString([]byte("secret"))
+	t, err := token.SignedString([]byte(config.Config("JWT_SECRET")))
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
 			"success": false,
@@ -128,15 +132,24 @@ func LoginUser(c *fiber.Ctx) error {
 			"message": "Error setting encryptedPrivateKey session data",
 		})
 	}
-	// fmt.Println("Setting session Private key code is fine")
-	// if err := config.SetSessionValue(c, "sessionKey", sessionKey); err != nil {
-	// 	return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
-	// 		"success": false,
-	// 		"message": "Error setting session key data",
-	// 	})
-	// }
+
+	dtoUser := dto.UserResponse{
+		ID:       storedUser.ID,
+		Email:    storedUser.Email,
+		Username: storedUser.Username,
+		Wallet:   storedUser.Wallet,
+		Role:     storedUser.Role,
+	}
+
+	c.Cookie(&fiber.Cookie{
+		Name:     "token",
+		Value:    t,
+		HTTPOnly: true,
+		Secure:   true,
+	})
 	fmt.Println("Setting session key key code is fine")
-	return c.JSON(fiber.Map{"token": t, "wallet_address": storedUser.Wallet})
+	// return c.JSON(fiber.Map{"success": true, "token": t, "user": dtoUser})
+	return c.JSON(fiber.Map{"success": true, "user": dtoUser})
 }
 
 // Function to generate a new user account with mnemonic and keystore
@@ -187,73 +200,16 @@ func CreateNewUser(username, email, password string) error {
 
 	// Insert into PostgreSQL
 	query := `
-        INSERT INTO users (username, email, password_hash, ethereum_address, keystore_file, encrypted_mnemonic)
-        VALUES ($1, $2, $3, $4, $5, $6)
+        INSERT INTO users (username, email, password_hash, ethereum_address, keystore_file, encrypted_mnemonic, role)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
     `
-	_, err = database.DB.Exec(query, username, email, passwordHash, ethereumAddress, keystoreFile, encryptedMnemonic)
+	_, err = database.DB.Exec(query, username, email, passwordHash, ethereumAddress, keystoreFile, encryptedMnemonic, "user")
 	if err != nil {
 		return err
 	}
 
 	return nil
 }
-
-// func EncryptMnemonic(mnemonic, password string) (string, error) {
-// 	salt := []byte("your-salt") // Use a securely generated salt
-// 	key := pbkdf2.Key([]byte(password), salt, 4096, 32, sha256.New)
-
-// 	block, err := aes.NewCipher(key)
-// 	if err != nil {
-// 		return "", err
-// 	}
-
-// 	aesGCM, err := cipher.NewGCM(block)
-// 	if err != nil {
-// 		return "", err
-// 	}
-
-// 	nonce := make([]byte, aesGCM.NonceSize())
-// 	if _, err := rand.Read(nonce); err != nil {
-// 		return "", err
-// 	}
-
-// 	ciphertext := aesGCM.Seal(nonce, nonce, []byte(mnemonic), nil)
-// 	return base64.StdEncoding.EncodeToString(ciphertext), nil
-// }
-
-// // DecryptMnemonic decrypts the mnemonic using AES.
-// func DecryptMnemonic(encryptedMnemonic, password string) (string, error) {
-// 	salt := []byte("your-salt") // Use the same salt used during encryption
-// 	key := pbkdf2.Key([]byte(password), salt, 4096, 32, sha256.New)
-
-// 	data, err := base64.StdEncoding.DecodeString(encryptedMnemonic)
-// 	if err != nil {
-// 		return "", err
-// 	}
-
-// 	block, err := aes.NewCipher(key)
-// 	if err != nil {
-// 		return "", err
-// 	}
-
-// 	aesGCM, err := cipher.NewGCM(block)
-// 	if err != nil {
-// 		return "", err
-// 	}
-
-// 	nonceSize := aesGCM.NonceSize()
-// 	if len(data) < nonceSize {
-// 		return "", errors.New("ciphertext too short")
-// 	}
-
-// 	nonce, ciphertext := data[:nonceSize], data[nonceSize:]
-// 	plaintext, err := aesGCM.Open(nil, nonce, ciphertext, nil)
-// 	if err != nil {
-// 		return "", err
-// 	}
-
-// 	return string(plaintext), nil
-// }
 
 func getHashedPassword(password string) ([]byte, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
@@ -286,4 +242,50 @@ func GetPrivateKey(userID int, password string) (*keystore.Key, error) {
 	}
 	fmt.Printf("Decrypted KEY %v", key)
 	return key, nil
+}
+
+func GetUserId(c *fiber.Ctx) (int, error) {
+	// authHeader := c.Get("Authorization")
+
+	// fmt.Print(authHeader)
+	// if authHeader == "" {
+	// 	return 0, c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Authorization header missing"})
+	// }
+
+	// // Extract token string (remove "Bearer " prefix if present)
+	// tokenString := authHeader
+	// if strings.HasPrefix(authHeader, "Bearer ") {
+	// 	tokenString = strings.TrimPrefix(authHeader, "Bearer ")
+	// }
+	token := c.Cookies("token")
+
+	fmt.Println("Token", token)
+	// Parse token
+	parsedToken, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
+		// Check the signing method
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("unexpected signing method")
+		}
+		return []byte(config.Config("JWT_SECRET")), nil
+	})
+
+	fmt.Println("Parsed token", parsedToken)
+	if err != nil || !parsedToken.Valid {
+		return 0, err
+	}
+
+	// Extract claims
+	claims, ok := parsedToken.Claims.(jwt.MapClaims)
+	fmt.Printf("Clains %v\n, %v\n", parsedToken, ok)
+	if !ok {
+		return 0, err
+	}
+
+	// Extract user ID
+	userID, ok := claims["user_id"].(float64) // JWT claims are typically in float64 format
+	fmt.Println("USER ID AFTER CLEANING ", userID, ok)
+	if !ok {
+		return 0, errors.New("user id missing from token")
+	}
+	return int(userID), nil
 }

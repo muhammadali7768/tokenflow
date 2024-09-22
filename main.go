@@ -7,6 +7,7 @@ import (
 	"example.com/go-fiber/database"
 	"example.com/go-fiber/router"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 
 	_ "github.com/lib/pq"
@@ -21,7 +22,12 @@ func main() {
 
 	// call the New() method - used to instantiate a new Fiber App
 	app := fiber.New()
-
+	app.Use(cors.New(cors.Config{
+		AllowCredentials: true,
+		AllowOrigins:     "http://localhost:3000",
+		AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS",
+		AllowHeaders:     "Content-Type, Accept, Authorization",
+	}))
 	// Middleware
 	app.Use(logger.New())
 	// Logging remote IP and Port
@@ -38,7 +44,7 @@ func main() {
 	router.RegisterRoutes(app)
 	router.SetupRoutes(app)
 
-	// listen on port 3000
-	app.Listen(":3000")
+	// listen on port 5000
+	app.Listen(":3001")
 
 }

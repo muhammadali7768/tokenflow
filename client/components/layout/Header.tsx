@@ -39,7 +39,7 @@ const Header = () => {
 
     return (
         <header className="bg-gray-900 text-white h-16 flex items-center justify-between px-8">
-            <h1 className="text-2xl font-bold">Blockchain Social Network</h1>
+            <h1 className="text-2xl font-bold">TokenFlow Blockchain</h1>
             <div>
                 <input
                     type="text"

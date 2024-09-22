@@ -33,8 +33,6 @@ func SessionMiddleware(c *fiber.Ctx) error {
 		fmt.Println("Error getting session:", err)
 		return err
 	}
-
-	fmt.Println("Session retrieved:", sess)
 	c.Locals("session", sess)
 	return c.Next()
 }

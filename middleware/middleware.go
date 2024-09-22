@@ -24,10 +24,11 @@ func AuthReq() func(*fiber.Ctx) error {
 	return err
 }
 
-var jwtSecret = []byte("secret")
+var jwtSecret = []byte(config.Config("JWT_SECRET"))
 
 // AuthMiddleware validates the JWT token passed in the header
 var AuthMiddleware = keyauth.New(keyauth.Config{
+	KeyLookup: "cookie:token",
 	Validator: func(c *fiber.Ctx, token string) (bool, error) {
 		parsedToken, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
 			// Check the signing method

@@ -5,8 +5,8 @@ import "./globals.css"
  const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Social Network App on Blockchain",
-  description: "First Social network app on blockchain. Here you can earn crypto on the engagement",
+  title: "TokenFlow App on Blockchain",
+  description: "TokenFlow app on blockchain. Here you can transfer tokens to your friends",
 };
 
 export default function RootLayout({
