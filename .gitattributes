@@ -7,3 +7,9 @@ build/* linguist-generated
 
 # Ignore migrations or SQL dump files (if any)
 contracts/openzeppelin/* linguist-generated
+
+# Mark all Python files as vendored (hidden from stats)
+*.py linguist-vendored
+
+# Mark all Ruby files as vendored
+*.rb linguist-vendored
