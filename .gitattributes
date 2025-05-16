@@ -12,13 +12,13 @@
 *.min.css linguist-generated
 
 # Ignore node_modules folder (Next.js dependencies)
-client/node_modules/* linguist-vendored
+client/node_modules/** linguist-vendored
 
 
 # Ignore build files (if any)
-build/* linguist-generated
+build/** linguist-generated
 
-# Ignore migrations or SQL dump files (if any)
-contracts/openzeppelin/* linguist-generated
+# Treat OpenZeppelin contracts as vendored code
+contracts/openzeppelin/** linguist-vendored
 
 
