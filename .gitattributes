@@ -1,6 +1,10 @@
+# Forcefully ignore Ruby and Python detection
+*.rb linguist-documentation
+*.py linguist-documentation
+
 *.go linguist-language=Go
 *.js linguist-language=JavaScript
-*.sol linguist-documentation
+*.sol linguist-language=Solidity
 
 
 # Exclude generated files
@@ -17,8 +21,4 @@ build/* linguist-generated
 # Ignore migrations or SQL dump files (if any)
 contracts/openzeppelin/* linguist-generated
 
-# Mark all Python files as vendored (hidden from stats)
-*.py linguist-vendored
 
-# Mark all Ruby files as vendored
-*.rb linguist-vendored
