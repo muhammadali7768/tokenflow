@@ -1,3 +1,12 @@
+*.go linguist-language=Go
+*.js linguist-language=JavaScript
+*.sol linguist-documentation
+
+
+# Exclude generated files
+*.min.js linguist-generated
+*.min.css linguist-generated
+
 # Ignore node_modules folder (Next.js dependencies)
 client/node_modules/* linguist-vendored
 
